@@ -14,6 +14,14 @@ struct WCModel
     I_ext
 end
 
+struct WCIntegral
+    R
+    I
+    τ
+    θ
+    f
+end
+
 include("activation_fns.jl")
 function nullclines(p::WCModel)
     E_act = p.E_pop.act
@@ -38,4 +46,28 @@ function simulate(p::WCModel, x0, T)
     prob = ODEProblem(f!, x0, tspan, p)
     sol = solve(prob)
     return sol
+end
+
+
+function simulate(p::WCIntegral, dt, T)
+    u(t) = p.R*p.I*(1 - exp(-t/p.τ))
+    ρ(t) = p.f(u(t))
+
+    n_iter = Int(T/dt)
+
+    A = zeros(n_iter)
+    # K = n_iter
+    K = 1000
+    m = zeros((n_iter, K))
+    # all neurons have fired juste before time 0
+    m[1,1] = 1
+
+    for iter in 2:n_iter
+        m[iter,1] = A[iter-1]*dt * exp(-ρ(dt)*dt)
+        for k in 2:K
+            m[iter,k] = m[iter-1,k-1]*exp(-ρ(k*dt)*dt)
+        end
+        A[iter] = 1/dt * (1 - sum(m[iter,:]))
+    end
+    return A
 end

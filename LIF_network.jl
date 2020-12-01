@@ -11,7 +11,7 @@ struct LIFNeuron <: Neuron
     threshold::Real # mV
     τ::Real         # ms
     R::Real         # Ω
-    firing_prob
+    f
 end
 
 """
@@ -64,12 +64,11 @@ end
 Simulate a LIF neuron for a given input current I
 """
 function simulate(neuron::LIFNeuron, u, I, dt)
-    du = 1/neuron.τ*(-(u-neuron.u_rest) + neuron.R*I) * dt
-    next_u = u + du
+    dudt = 1/neuron.τ*(-u + neuron.R*I)
+    next_u = u + dudt*dt
 
-    # firing_prob = neuron.firing_prob(next_u)
-    f(u) =1e-3 .*exp.(1/0.004*(u.-neuron.threshold))
-    firing_prob = 1 - exp(-dt*f(next_u))
+    firing_prob = 1 - exp(-dt*neuron.f(next_u))
+    # firing_prob = dt*neuron.f(next_u)
 
     if rand() <= firing_prob
         return neuron.u_rest, true
@@ -113,5 +112,27 @@ function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
     end
     return state
 end
+
+
+# function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
+#     n_iter = n_iter = Int(T/dt)
+#     n_neurons = length(net.neurons)
+#
+#     state = SpikingNetworkState(zeros(n_neurons, n_iter), zeros(n_neurons, n_iter), zeros(Int32, n_neurons))
+#     state.u[:,1] = u0
+#
+#     for iter in 1:n_iter-1
+#         spikes = zeros(n_neurons)
+#         for i in 1:n_neurons
+#             neuron = net.neurons[i]
+#             state.u[i,iter+1], spike = simulate(neuron, state.u[i,iter], ext.I[1], dt)
+#             if spike == 1
+#                 state.spike_count[i] += 1
+#                 state.spike_trains[i,state.spike_count[i]] = iter*dt
+#             end
+#         end
+#     end
+#     return state
+# end
 
 # end
