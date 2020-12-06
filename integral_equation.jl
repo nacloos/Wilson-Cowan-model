@@ -12,7 +12,7 @@ function simulate(p::IntegralEq, dt, T)
     A = zeros(n_iter)
     K = 1000
     m = zeros((n_iter, K))
-    m[1,1] = 1     # all neurons have fired juste before time 0
+    m[1,1] = 1     # fraction of neurons at time 0 that fired at time -dt
 
     for iter in 2:n_iter
         m[iter,1] = A[iter-1]*dt * exp(-p.ρ(dt)*dt)

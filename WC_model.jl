@@ -52,17 +52,28 @@ end
 # TODO WC integral equation -> require an absolute refractory period that is larger than dt ?!
 # TODO still it doesn't oscillate...
 function simulate(p::WCIntegral, dt, T)
-    u(t) = p.R*p.I .*(1 .- exp.(-t ./ p.τ))
-    ρ(t) = p.f(u(t))
+    # u(t) = p.R*p.I .*(1 .- exp.(-t ./ p.τ))
+    # ρ(t) = p.f(u(t))
 
     n_iter = Int(T/dt)
     γ = Int(p.Δ_abs/dt) # number of iterations during the absolute refractory period
 
-    A = zeros(n_iter)
-    A[1:γ] .= 1
 
-    for iter in n+1:n_iter
-        A[iter] = (1 - exp(-dt*ρ(iter*dt))) *(1 - sum(A[iter-γ:iter-1])*p.Δ_abs)
+    h = zeros(n_iter)
+    # initially all neurons have just fired at time -dt, they start their refractory period at t=0
+    A = zeros(n_iter)
+
+    for iter in 2:n_iter
+        h[iter] = h[iter-1] + 1/p.τ*(-h[iter-1] + p.R*p.I)*dt
+
+        if iter > γ
+            # A[iter] = f(p.R*p.I) / (1 + Δ_abs*f(p.R*p.I)) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
+            A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter])) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
+        else
+            # initialization, assume zero input current before t=0
+            # A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter]))
+            A[iter] = 0
+        end
     end
-    return A
+    return A # population activity starting at time t=0
 end

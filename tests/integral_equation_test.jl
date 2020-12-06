@@ -21,7 +21,7 @@ f(u) = 1e-3 .*exp.(1/0.004*(u.-threshold))
 
 neuron = LIFNeuron(u_rest, threshold, τ, R, Δ_abs, f)
 
-n_neurons = 5000
+n_neurons = 100
 net = SpikingNetwork([neuron for i=1:n_neurons], zeros(n_neurons, n_neurons))
 
 
@@ -37,8 +37,11 @@ u(t) = R*I_ext[1] .*(1 .- exp.(-t./τ))
 integral_eq = IntegralEq(ρ)
 A_integral = simulate(integral_eq, dt, T)
 
+wc_integral = WCIntegral(R, I_ext[1], τ, threshold, Δ_abs, f)
+A_wc_integral = simulate(wc_integral, dt, T)
+
+
 println()
-println("f(RI): ", f(R*I_ext[1]))
 
 t = dt:dt:T
 A = coarse_grain(t, microstate, WindowFilter(1e-3))
@@ -47,15 +50,18 @@ A = coarse_grain(t, microstate, WindowFilter(1e-3))
 figure()
 plot(t, A, label="LIF network")
 plot(t, A_integral, label="Integral equation")
+plot(t, A_wc_integral, label="WC integral equation")
 
-plt.hlines(mean(microstate.spike_count)/T, 0, T)
-println("Mean firing rate: ", mean(microstate.spike_count)/T)
+hlines(mean(microstate.spike_count)/T, 0, T, label="Mean firing rate")
 legend()
 
+println()
+println("Mean firing rate: ", mean(microstate.spike_count)/T)
 
-# figure()
-# plot(t, microstate.u[1,:])
-#
-# u_test(t) = if (t > Δ_abs+dt) R*I_ext[1] .*(1 .- exp.(-(t-Δ_abs-dt)./τ)) else 0 end
-# plot(t, [u_test(t_k) for t_k in t])
-# plt.title("Comparison of the evolution of the membrane potential\nbetween LIF neuron and integral equation")
+
+figure()
+plot(t, microstate.u[1,:])
+
+u_test(t) = if (t > Δ_abs+dt) R*I_ext[1] .*(1 .- exp.(-(t-Δ_abs-dt)./τ)) else 0 end
+plot(t, [u_test(t_k) for t_k in t])
+plt.title("Comparison of the evolution of the membrane potential\nbetween LIF neuron and integral equation")

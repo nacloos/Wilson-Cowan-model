@@ -91,7 +91,7 @@ end
 Simulate a network of LIF neurons
 """
 function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
-    n_iter = n_iter = Int(T/dt)
+    n_iter = Int(T/dt)
     n_neurons = length(net.neurons)
 
     # intially all neurons have fired once
