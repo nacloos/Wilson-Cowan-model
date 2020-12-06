@@ -1,6 +1,7 @@
 using Random, Distributions
 Random.seed!(5)
 
+
 abstract type Connectivity end
 struct FullyConnected <: Connectivity
     n::Integer

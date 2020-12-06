@@ -17,11 +17,16 @@ function smooth(t, spike_time::Real, filter::GaussianFilter)
 end
 
 function smooth(t, spike_time::Real, filter::WindowFilter)
-    return convert(Array{Int8}, spike_time .< t .< spike_time + filter.width)/filter.width
+    # Need to divide by width if consider a time average
+    # if the width is as small as dt, no time average
+
+    # array containing 1 of the neuron fired in the time window [t, t+width], 0 otherwise
+    spike_neurons = convert(Array{Int8}, spike_time .< t .< spike_time + filter.width)
+    return spike_neurons/filter.width
 end
 
 """
-Smooth the spike train of a neuron
+Smooth the spike train of a neuron using a filter
 """
 function smooth(t, spike_train::Array, filter::Filter)
     smoothed = zeros(size(t))
@@ -32,6 +37,9 @@ function smooth(t, spike_train::Array, filter::Filter)
     return smoothed
 end
 
+"""
+Apply a smoothing filter to the spike trains
+"""
 function coarse_grain(t, state::SpikingNetworkState, filter::Filter)
     A = zeros(size(t))
     n_neurons = size(state.spike_trains)[1]
@@ -47,8 +55,9 @@ end
 # function coarse_grain(t, state::SpikingNetworkState, ::PCA)
 # end
 
-
-
+"""
+Coarse grain each cluster individually
+"""
 function coarse_grain(cluster::Cluster)
     for c in cluster.clusters
         coarse_grain(c)

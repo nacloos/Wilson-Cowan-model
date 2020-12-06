@@ -1,9 +1,7 @@
-# module NetworkLIF
-# export Neuron, simulate_dynamics, pop_actvity
 using Random, Distributions
 Random.seed!(5)
 
-include("activation_fns.jl")
+# TODO: SimConfig
 
 abstract type Neuron end
 struct LIFNeuron <: Neuron
@@ -11,7 +9,8 @@ struct LIFNeuron <: Neuron
     threshold::Real # mV
     τ::Real         # ms
     R::Real         # Ω
-    f
+    Δ_abs           # ms
+    f               # spike intensity
 end
 
 """
@@ -44,10 +43,12 @@ function spike_alpha(spike_time, t, width=0)
     end
 end
 
-function input_current(iter, input_weights, spike_trains, spike_count, ext::ExternalInput, dt)
-    # compute the input current to a neuron
-    # param input_weights: incoming connections weights
-    # param spike_trains: contains the spike trains of all the neurons of the network
+"""
+Compute the input current of a neuron with input weights `input_weights`,
+from the spike trains `spike_trains` of other neurons,
+and from the external input `ext`.
+"""
+function input_current(input_weights, spike_trains, spike_count, ext::ExternalInput, dt, iter)
     I = 0
     for j in 1:length(input_weights)
         if spike_count[j] > 0
@@ -55,33 +56,36 @@ function input_current(iter, input_weights, spike_trains, spike_count, ext::Exte
             I += input_weights[j] * spike_alpha(spike_trains[j, spike_count[j]], iter*dt)
         end
     end
-    # gauss_noise = rand(Normal(0, 1e-1))
+
     noise = rand(ext.noise)
     return I + ext.I[iter] + noise
 end
 
+
 """
-Simulate a LIF neuron for a given input current I
+Simulate a LIF neuron for a given input current I,
+return the updated membrane potential and whether a spike is emitted.
 """
-function simulate(neuron::LIFNeuron, u, I, dt)
+function simulate(neuron::LIFNeuron, u, I, last_spike, dt, iter)
+    # check if the neuron is in its refractory period
+    if iter*dt < last_spike + neuron.Δ_abs
+        return u, false
+    end
+
+    # LIF dynamics
     dudt = 1/neuron.τ*(-u + neuron.R*I)
     next_u = u + dudt*dt
 
+    # probability of emitting one spike in the interval dt, given the membrane potential
     firing_prob = 1 - exp(-dt*neuron.f(next_u))
-    # firing_prob = dt*neuron.f(next_u)
 
     if rand() <= firing_prob
         return neuron.u_rest, true
     else
         return next_u, false
     end
-
-    # if next_u > neuron.threshold
-    #     return neuron.u_rest, true # emit a spike and reset membrane potential
-    # else
-    #     return next_u, false
-    # end
 end
+
 
 """
 Simulate a network of LIF neurons
@@ -90,15 +94,17 @@ function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
     n_iter = n_iter = Int(T/dt)
     n_neurons = length(net.neurons)
 
-    state = SpikingNetworkState(zeros(n_neurons, n_iter), zeros(n_neurons, n_iter), zeros(Int32, n_neurons))
+    # intially all neurons have fired once
+    state = SpikingNetworkState(zeros(n_neurons, n_iter), zeros(n_neurons, n_iter), ones(Int32, n_neurons))
     state.u[:,1] = u0
 
     for iter in 1:n_iter-1
         spikes = zeros(n_neurons)
         for i in 1:n_neurons
             neuron = net.neurons[i]
-            I = input_current(iter, net.W[i], state.spike_trains, state.spike_count, ext, dt)
-            state.u[i,iter+1], spike = simulate(neuron, state.u[i,iter], I, dt)
+            I = input_current(net.W[i], state.spike_trains, state.spike_count, ext, dt, iter)
+            last_spike = state.spike_trains[i,state.spike_count[i]]
+            state.u[i,iter+1], spike = simulate(neuron, state.u[i,iter], I, last_spike, dt, iter)
 
             spikes[i] = spike
         end
@@ -107,32 +113,7 @@ function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
                 state.spike_count[i] += 1
                 state.spike_trains[i,state.spike_count[i]] = iter*dt
             end
-            # TODO don't need to update all membrane potentials before updating the spikes ?
         end
     end
     return state
 end
-
-
-# function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
-#     n_iter = n_iter = Int(T/dt)
-#     n_neurons = length(net.neurons)
-#
-#     state = SpikingNetworkState(zeros(n_neurons, n_iter), zeros(n_neurons, n_iter), zeros(Int32, n_neurons))
-#     state.u[:,1] = u0
-#
-#     for iter in 1:n_iter-1
-#         spikes = zeros(n_neurons)
-#         for i in 1:n_neurons
-#             neuron = net.neurons[i]
-#             state.u[i,iter+1], spike = simulate(neuron, state.u[i,iter], ext.I[1], dt)
-#             if spike == 1
-#                 state.spike_count[i] += 1
-#                 state.spike_trains[i,state.spike_count[i]] = iter*dt
-#             end
-#         end
-#     end
-#     return state
-# end
-
-# end

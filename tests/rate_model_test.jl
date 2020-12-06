@@ -21,4 +21,16 @@ function test_f()
     simulate(model, [0], 5)
 end
 
-test_f()
+function test_simulate()
+    T = 0.2; dt = 1e-4; n_iter = Int(T/dt)
+    θ = 6e-2; τ = 4e-3; a=10
+    w = 1
+    ext = 1
+    model = RateModel(Pop(τ, Sigmoid(a, θ)), w, ext)
+    sol = simulate(model, [0], T)
+    t = dt:dt:T
+    plot(t, sol(t))
+    legend()
+end
+
+test_simulate()

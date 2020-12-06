@@ -61,5 +61,5 @@ function test_simulate()
 end
 
 # test_sigmoid()
-test_nullclines()
-# test_simulate()
+# test_nullclines()
+test_simulate()

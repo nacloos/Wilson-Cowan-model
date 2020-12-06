@@ -19,10 +19,10 @@ struct WCIntegral
     I
     τ
     θ
+    Δ_abs
     f
 end
 
-include("activation_fns.jl")
 function nullclines(p::WCModel)
     E_act = p.E_pop.act
     I_act = p.I_pop.act
@@ -49,25 +49,20 @@ function simulate(p::WCModel, x0, T)
 end
 
 
+# TODO WC integral equation -> require an absolute refractory period that is larger than dt ?!
+# TODO still it doesn't oscillate...
 function simulate(p::WCIntegral, dt, T)
-    u(t) = p.R*p.I*(1 - exp(-t/p.τ))
+    u(t) = p.R*p.I .*(1 .- exp.(-t ./ p.τ))
     ρ(t) = p.f(u(t))
 
     n_iter = Int(T/dt)
+    γ = Int(p.Δ_abs/dt) # number of iterations during the absolute refractory period
 
     A = zeros(n_iter)
-    # K = n_iter
-    K = 1000
-    m = zeros((n_iter, K))
-    # all neurons have fired juste before time 0
-    m[1,1] = 1
+    A[1:γ] .= 1
 
-    for iter in 2:n_iter
-        m[iter,1] = A[iter-1]*dt * exp(-ρ(dt)*dt)
-        for k in 2:K
-            m[iter,k] = m[iter-1,k-1]*exp(-ρ(k*dt)*dt)
-        end
-        A[iter] = 1/dt * (1 - sum(m[iter,:]))
+    for iter in n+1:n_iter
+        A[iter] = (1 - exp(-dt*ρ(iter*dt))) *(1 - sum(A[iter-γ:iter-1])*p.Δ_abs)
     end
     return A
 end
