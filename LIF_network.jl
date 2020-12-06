@@ -68,7 +68,7 @@ return the updated membrane potential and whether a spike is emitted.
 """
 function simulate(neuron::LIFNeuron, u, I, last_spike, dt, iter)
     # check if the neuron is in its refractory period
-    if iter*dt < last_spike + neuron.Δ_abs
+    if iter*dt <= last_spike + neuron.Δ_abs
         return u, false
     end
 
@@ -111,7 +111,7 @@ function simulate(net::SpikingNetwork, ext::ExternalInput, u0, dt, T)
         for i in 1:n_neurons
             if spikes[i] == 1
                 state.spike_count[i] += 1
-                state.spike_trains[i,state.spike_count[i]] = iter*dt
+                state.spike_trains[i,state.spike_count[i]] = (iter+1)*dt
             end
         end
     end

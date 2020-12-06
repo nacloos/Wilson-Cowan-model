@@ -32,8 +32,10 @@ u0 = zeros(n_neurons)
 microstate = simulate(net, ext_input, u0, dt, T)
 
 
-integral_eq = IntegralEq(R, I_ext[1], τ, threshold, f)
-A_integral = simulate(integral_eq, Δ_abs, dt, T)
+u(t) = R*I_ext[1] .*(1 .- exp.(-t./τ))
+ρ(t) = if (t > Δ_abs+dt) f(u(t-Δ_abs-dt)) else 0 end
+integral_eq = IntegralEq(ρ)
+A_integral = simulate(integral_eq, dt, T)
 
 println()
 println("f(RI): ", f(R*I_ext[1]))
@@ -49,3 +51,11 @@ plot(t, A_integral, label="Integral equation")
 plt.hlines(mean(microstate.spike_count)/T, 0, T)
 println("Mean firing rate: ", mean(microstate.spike_count)/T)
 legend()
+
+
+# figure()
+# plot(t, microstate.u[1,:])
+#
+# u_test(t) = if (t > Δ_abs+dt) R*I_ext[1] .*(1 .- exp.(-(t-Δ_abs-dt)./τ)) else 0 end
+# plot(t, [u_test(t_k) for t_k in t])
+# plt.title("Comparison of the evolution of the membrane potential\nbetween LIF neuron and integral equation")
