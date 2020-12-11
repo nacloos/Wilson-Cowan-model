@@ -13,13 +13,18 @@ equation, for a constant external input.
 
 T = 0.2; dt = 1e-4; n_iter = Int(T/dt)
 
-u_rest = 0; threshold = 6e-2; τ = 4e-3; R = 7e-2
+u_rest = 0; θ = 6e-2; τ = 4e-3; R = 7e-2
+θ = 1
 
-f(u) = 1e-3 .*exp.(1/0.004*(u.-threshold))
+# f(u) = 1e-3 .*exp.(1/0.004*(u.-θ))
+
+β = 2
+τ₀ = 1e-3
+f(u) = 1/τ₀ .*exp.(β*(u.-θ))
 Δ_abs = 4e-3
-# Δ_abs = 1e-2
 
-neuron = LIFNeuron(u_rest, threshold, τ, R, Δ_abs, f)
+
+neuron = LIFNeuron(u_rest, θ, τ, R, Δ_abs, f)
 
 n_neurons = 100
 net = SpikingNetwork([neuron for i=1:n_neurons], zeros(n_neurons, n_neurons))
@@ -37,7 +42,7 @@ u(t) = R*I_ext[1] .*(1 .- exp.(-t./τ))
 integral_eq = IntegralEq(ρ)
 A_integral = simulate(integral_eq, dt, T)
 
-wc_integral = WCIntegral(R, I_ext[1], τ, threshold, Δ_abs, f)
+wc_integral = WCIntegral(R, I_ext[1], τ, θ, Δ_abs, f)
 A_wc_integral = simulate(wc_integral, dt, T)
 
 

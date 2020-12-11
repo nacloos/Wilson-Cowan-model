@@ -76,6 +76,8 @@ function simulate(neuron::LIFNeuron, u, I, last_spike, dt, iter)
     dudt = 1/neuron.τ*(-u + neuron.R*I)
     next_u = u + dudt*dt
 
+    # println(next_u)
+
     # probability of emitting one spike in the interval dt, given the membrane potential
     firing_prob = 1 - exp(-dt*neuron.f(next_u))
 

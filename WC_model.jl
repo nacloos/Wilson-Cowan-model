@@ -58,17 +58,20 @@ function simulate(p::WCIntegral, dt, T)
     n_iter = Int(T/dt)
     γ = Int(p.Δ_abs/dt) # number of iterations during the absolute refractory period
 
+    # h = zeros(n_iter)
+    h(t) = 1-exp(-(t-0.1)/p.τ)
 
-    h = zeros(n_iter)
     # initially all neurons have just fired at time -dt, they start their refractory period at t=0
     A = zeros(n_iter)
 
     for iter in 2:n_iter
-        h[iter] = h[iter-1] + 1/p.τ*(-h[iter-1] + p.R*p.I)*dt
+        # h[iter] = h[iter-1] + 1/p.τ*(-h[iter-1] + p.R*p.I)*dt
 
         if iter > γ
             # A[iter] = f(p.R*p.I) / (1 + Δ_abs*f(p.R*p.I)) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
-            A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter])) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
+            # A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter])) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
+            A[iter] = f(h(iter*dt)) / (1 + Δ_abs*f(h(iter*dt))) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
+            # A[iter] = f(h(iter*dt)) / (1 + Δ_abs*f(h(iter*dt)))
         else
             # initialization, assume zero input current before t=0
             # A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter]))

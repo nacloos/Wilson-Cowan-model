@@ -9,10 +9,10 @@ include("../coarse_graining.jl")
 T = 0.2; dt = 1e-4; n_iter = Int(T/dt)
 
 # u_rest = -6e-2 # -60mV
-u_rest = 0; threshold = 6e-2; τ = 1e-2; R = 7e-2
-firing_prob = act_fn(Sigmoid(1e8, threshold))
+u_rest = 0; θ = 6e-2; τ = 1e-2; R = 7e-2; Δ_abs = 0
+gain_f = act_fn(Sigmoid(1e8, θ))
 
-neuron = LIFNeuron(u_rest, threshold, τ, R, firing_prob)
+neuron = LIFNeuron(u_rest, θ, τ, R, Δ_abs, gain_f)
 
 n_neurons = 100
 J0 = 0
@@ -26,7 +26,7 @@ W = weights(Homogeneous(J0/n_neurons), FullyConnected(n_neurons, n_neurons))
 net = SpikingNetwork([neuron for i=1:n_neurons], W)
 # plot(net)
 
-I_ext = ones(n_iter)
+I_ext = 1*ones(n_iter)
 # I_ext[n_iter÷2:end] .= 0
 # noise_distr = Normal(0, 1e-1)
 noise_distr = Normal(0, 0)

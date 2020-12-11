@@ -2,7 +2,7 @@ using DifferentialEquations
 using PyPlot
 pygui(true)
 
-include("activation_fns.jl")
+include("../activation_fns.jl")
 
 struct RateModel
     # pop::Pop
@@ -18,6 +18,14 @@ struct RateIntegralModel
     I
     f
 end
+
+function f(x, p::RateModel, iter)
+    # act = p.pop.act
+	A = x
+	dxdt = 1/p.τ * (-A +p.f(p.w*A + p.ext))
+    return dxdt
+end
+
 
 function f(x, p::RateModel, dt, iter)
     # act = p.pop.act
