@@ -17,7 +17,7 @@ function plot_f(p::RateModel)
 end
 
 
-function plot_hysteresis()
+function plot_hysteresis(F)
     ext_values = range(0, stop=0.8, length=100)
 
     # store the values of ext and the corresponding equilibrium value, when it exists
@@ -29,7 +29,8 @@ function plot_hysteresis()
     second_bif_idx = -1 # set to -1 if tje bifurcation has not yet occured
 
     for (i, ext) in enumerate(ext_values)
-        model = RateModel(τ, w, ext, u->act_fn(Sigmoid(a, θ))(R*u))
+        # model = RateModel(τ, w, ext, u->act_fn(Sigmoid(a, θ))(R*u))
+        model = RateModel(τ, w, ext, F)
         eq = find_equilibria(model)
         # check if encounter a saddle-node bifurcation
         if length(eq) > 1 && first_bif_idx == -1
@@ -77,20 +78,24 @@ R = 7e-2
 w = 1
 ext = 0.8
 
+f(x) = act_fn(Sigmoid(a, θ))(R*x)
 
-# β = 2
+
+# Δ_abs = 4e-3
+# β = 1000
 # τ₀ = 1e-3
 # f(u) = 1/τ₀ .*exp.(β*(u.-θ))
+# F(I) = f(R*I) ./ (1 .+ Δ_abs*f(R*I))
 
-f(x) = act_fn(Sigmoid(a, θ))(R*x)
 
 model = RateModel(τ, w, ext, f)
 eq = find_equilibria(model)
 println()
 println(eq)
 
+figure()
 plot_f(model)
 scatter(eq, model.f(model.w*eq .+ model.ext), marker="x")
 
 figure()
-plot_hysteresis()
+plot_hysteresis(f)

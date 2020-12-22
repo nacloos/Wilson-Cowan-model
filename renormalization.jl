@@ -1,5 +1,5 @@
 include("LIF_network.jl")
-include("WC_model.jl")
+include("WC_model/WC_model.jl")
 include("rate_model.jl")
 
 """

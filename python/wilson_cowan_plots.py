@@ -38,8 +38,8 @@ def plot_simulation(x0, p, t_end, dt):
 
 
 def plot_nullclines(p):
-	E_nullcline = np.linspace(-0.01, 0.99, 100)
-	I_nullcline = np.linspace(-0.1, 0.8, 100)
+	E_nullcline = np.linspace(0., 0.99, 100)
+	I_nullcline = np.linspace(0., 0.99, 100)
 	
 	I, E = nullclines(E_nullcline, I_nullcline, p)
 
@@ -101,16 +101,16 @@ def plot_eigenvalues(p):
 if __name__ == '__main__':
 	# plot_eigenvalues(p)
 
-	# plt.figure("Phase space")
-	# plot_phase_space(p, t_end, dt)
-	# # plot_nullclines(p)
-	# plt.show()
+	plt.figure("Phase space")
+	plot_phase_space(p, t_end, dt)
+	plot_nullclines(p)
+	plt.show()
 
 
 	# plt.figure(2)
 	# x0 = [1., 0.]
 	x0 = [0.45, 0.25]
-	plot_simulation(x0, p, t_end, dt)
+	# plot_simulation(x0, p, t_end, dt)
 	# plt.subplot(2, 1, 1)
 	# plot_simulation(x0, p, t_end, dt)
 	# plt.subplot(2, 1, 2)

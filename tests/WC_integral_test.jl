@@ -3,7 +3,7 @@ include("../network_weights.jl")
 include("../LIF_network.jl")
 include("../plotting.jl")
 include("../coarse_graining.jl")
-include("../WC_model.jl")
+include("../WC_model/WC_model.jl")
 include("../rate_model/rate_model.jl")
 
 

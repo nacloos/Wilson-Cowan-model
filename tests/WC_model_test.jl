@@ -1,7 +1,7 @@
 using PyPlot
 pygui(true)
 
-include("../WC_model.jl")
+include("../WC_model/WC_model.jl")
 
 
 function test_sigmoid()

@@ -1,6 +1,6 @@
 using DifferentialEquations
 
-include("activation_fns.jl")
+include("../activation_fns.jl")
 
 # TODO time dependent input
 struct WCModel

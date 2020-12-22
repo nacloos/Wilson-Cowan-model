@@ -35,7 +35,7 @@ struct ExternalInput
     noise::Distribution
 end
 
-function spike_alpha(spike_time, t, width=0)
+function spike_alpha(spike_time, t, width=2e-3)
     if t > spike_time + width
         return 0
     else
@@ -80,6 +80,7 @@ function simulate(neuron::LIFNeuron, u, I, last_spike, dt, iter)
 
     # probability of emitting one spike in the interval dt, given the membrane potential
     firing_prob = 1 - exp(-dt*neuron.f(next_u))
+    # firing_prob = f(next_u)
 
     if rand() <= firing_prob
         return neuron.u_rest, true
