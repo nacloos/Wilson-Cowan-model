@@ -1,10 +1,34 @@
 using Test
 using LinearAlgebra
+using Roots
+using Interpolations
 using PyPlot
 pygui(true)
 
 include("WC_model.jl")
 include("../activation_fns.jl")
+
+# A = [4, 5, 6]
+# nodes = ([-1, 2, 3],)
+# itp = interpolate(nodes, A, Gridded(Linear()))
+# println(itp([2, 2.5]))
+
+"""
+Find the equilibria by computing the roots of the difference between the two nullclines
+"""
+function find_equilibria(p::WCModel)
+    E_nullcline, I_nullcline = nullclines(p)
+    values = range(0.0, stop=0.9998, length=1000)
+    # interpolate to have I as a function of E for the I-nullcline
+    I_itp = LinearInterpolation((I_nullcline(values),), values, extrapolation_bc=Flat())
+    Δ_nullclines(E) = E_nullcline(E) - I_itp(E)
+    equilibria = find_zeros(Δ_nullclines, 0.0, 0.9998)
+    # plot(I_nullcline(values), values, label="\$\\frac{dI}{dt}=0\$")
+    # plot(values, E_nullcline(values), label="\$\\frac{dE}{dt}=0\$")
+    # plot(values, Δ_nullclines(values))
+
+    return [[eq, I_itp(eq)] for eq in equilibria]
+end
 
 function jacobian(E, I, E_ext, I_ext, p::WCModel)
     τE = p.E_pop.τ; τI = p.I_pop.τ
@@ -30,7 +54,7 @@ function ext_input(E, I, p::WCModel)
 end
 
 function saddle_node_bifurcation(p::WCModel)
-    E = range(0, stop=0.999, length=1000)
+    E = range(0, stop=0.9998, length=1000)
     # apply a change of variable to simplify the computation of the determinant
     x = E .+ 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
@@ -45,10 +69,10 @@ function saddle_node_bifurcation(p::WCModel)
     I2 = I2 .- 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
     E1, I1, E_ext1, I_ext1 = ext_input(E, I1, p)
-    plot(E_ext1, I_ext1)
+    plot(E_ext1, I_ext1, color="tab:blue", label="Saddle-node bifurcation")
 
     E2, I2, E_ext2, I_ext2 = ext_input(E, I2, p)
-    plot(E_ext2, I_ext2)
+    # plot(E_ext2, I_ext2)
 
 
     i = 500
@@ -66,7 +90,7 @@ end
 
 function hopf_bifurcation(p::WCModel)
     # x = E + 1/(1+exp(a theta)) is considered as a curve parameter for E(x), I(x)
-    E = range(0, stop=0.999, length=1000)
+    E = range(0, stop=0.9998, length=1000)
     # apply a change of variable to simplify the computation of the trace
     x = E .+ 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
@@ -85,10 +109,10 @@ function hopf_bifurcation(p::WCModel)
     # figure()
 
     E1, I1, E_ext1, I_ext1 = ext_input(E, I1, p)
-    plot(E_ext1, I_ext1)
+    plot(E_ext1, I_ext1, color="gray", label="Hopf bifurcation")
 
     E2, I2, E_ext2, I_ext2 = ext_input(E, I2, p)
-    plot(E_ext2, I_ext2)
+    # plot(E_ext2, I_ext2)
     # plot(E, E_ext)
     # plot(E, I_ext)
 
@@ -109,25 +133,57 @@ function hopf_bifurcation(p::WCModel)
 end
 
 
-function plot_ext_plane(p::WCModel)
-    for I_ext=0:10, E_ext=0:10
-        det = det(jacobian)
-        scatter()
+function bifurcation_diagram(p::WCModel)
+    # for I_ext=0:1.5:14, E_ext=0:1.5:14
+    for I_ext=0:0.5:16, E_ext=0:0.5:16
+        wc = WCModel(p.E_pop, p.I_pop, p.wEE, p.wIE, p.wEI, p.wII, E_ext, I_ext)
+        equilibria = find_equilibria(wc)
+        for (i, eq) in enumerate(equilibria)
+            J = jacobian(eq[1], eq[2], E_ext, I_ext, p)
+            if det(J) > 0
+                if tr(J) < 0
+                    # stable node
+                    fill_style = "full"
+                else
+                    # instable node
+                    fill_style = "none"
+                end
+            else
+                # saddle point
+                fill_style = "left"
+            end
+            if all(abs.(imag(eigvals(J))) .< 1e-10)
+                # real eigenvalues
+                color = "tab:blue"
+            else
+                # complex conjugate eigenvalues
+                color = "crimson"
+            end
+            plot(E_ext+i*0.15, I_ext+i*0.15, markersize=5, marker="o", fillstyle=fill_style, color=color)
+        end
     end
 end
 
 
+# tau_E=1.; a_E=3.0; theta_E=3.0
+# tau_I=1.; a_I=3.0; theta_I=3.0
 tau_E=1.; a_E=3.0; theta_E=3.0
 tau_I=1.; a_I=3.0; theta_I=3.0
-wEE=10; wEI=12; wIE=15; wII=8
-E_ext=1; I_ext=0
+# wEE=10; wEI=12; wIE=15; wII=8
+wEE=10; wEI=14; wIE=18; wII=8
+E_ext=7.7; I_ext=7.7
 E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))
 wc = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 
-figure()
+# eq = find_equilibria(wc)
+# println(eq)
+
+figure(figsize=(8,8), dpi=130)
 saddle_node_bifurcation(wc)
-# hopf_bifurcation(wc)
+hopf_bifurcation(wc)
+bifurcation_diagram(wc)
+legend()
 
 
 

@@ -1,3 +1,4 @@
+using Interpolations
 using PyPlot
 pygui(true)
 
@@ -22,9 +23,13 @@ end
 
 function plot_nullclines(p::WCModel)
     E_nullcline, I_nullcline = nullclines(p)
-    values = range(0.0, stop=0.999, length=500)
+    values = range(0.0, stop=0.99985, length=500)
+    I_itp = LinearInterpolation((I_nullcline(values),), values, extrapolation_bc=Flat())
+    nullclines_diff = E_nullcline(values) - I_itp(values)
     plot(I_nullcline(values), values, label="\$\\frac{dI}{dt}=0\$")
     plot(values, E_nullcline(values), label="\$\\frac{dE}{dt}=0\$")
+    plot(values, nullclines_diff)
+    plot(values, I_itp(values))
 end
 
 
@@ -40,9 +45,9 @@ end
 
 tau_E=1.; a_E=3.0; theta_E=3.0
 tau_I=1.; a_I=3.0; theta_I=3.0
-wEE=10; wEI=12; wIE=15; wII=8
-# E_ext=7.560095728812953; I_ext=3.35432046059543
-E_ext=9.382588067590513; I_ext=3.972182
+# wEE=10; wEI=12; wIE=15; wII=8
+wEE=10; wEI=14; wIE=18; wII=8
+E_ext=8; I_ext=0.2
 
 E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))

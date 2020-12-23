@@ -2,7 +2,7 @@ using DifferentialEquations
 
 include("../activation_fns.jl")
 
-# TODO time dependent input
+# TODO time dependent input, don't put external input the WCModel
 struct WCModel
     E_pop::Pop
     I_pop::Pop
