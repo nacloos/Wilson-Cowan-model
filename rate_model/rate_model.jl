@@ -20,9 +20,8 @@ struct RateIntegralModel
 end
 
 function f(x, p::RateModel, iter)
-    # act = p.pop.act
 	A = x
-	dxdt = 1/p.τ * (-A +p.f(p.w*A + p.ext))
+	dxdt = 1/p.τ * (-A +p.f(p.w*A + p.ext[iter]))
     return dxdt
 end
 
@@ -32,7 +31,7 @@ function f(x, p::RateModel, dt, iter)
 	A = x
     F(u) = 1 - exp(-dt*p.f(u))
 
-	dxdt = 1/p.τ * (-A +F(p.w*A + p.ext))
+	dxdt = 1/p.τ * (-A +F(p.w*A + p.ext[iter]))
     return dxdt
 end
 
@@ -43,7 +42,8 @@ function simulate(p::RateModel, x0, dt, T)
     A[1] = x0
     dAdt = 0
     for iter in 1:n_iter-1
-        A[iter+1] = A[iter] + f(A[iter], p, dt, iter)*dt
+        # A[iter+1] = A[iter] + f(A[iter], p, dt, iter)*dt
+        A[iter+1] = A[iter] + f(A[iter], p, iter)*dt
     end
     return A
 end

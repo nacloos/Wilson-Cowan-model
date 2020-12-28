@@ -1,6 +1,9 @@
 using DifferentialEquations
+using PyCall
 
 include("../activation_fns.jl")
+
+integrate = pyimport("scipy.integrate")
 
 # TODO time dependent input, don't put external input the WCModel
 struct WCModel
@@ -40,14 +43,45 @@ function f!(dxdt, x, p::WCModel, t)
 	dxdt[2] = 1/p.I_pop.τ * (-I + act_fn(I_act)(p.wIE*E - p.wII*I + p.I_ext)) # dI/dt
 end
 
+function f(x, t)
+    E_act = p.E_pop.act
+    I_act = p.I_pop.act
+	E, I = x
+    dxdt = zeros(2)
+	dxdt[1] = 1/p.E_pop.τ * (-E + act_fn(E_act)(p.wEE*E - p.wEI*I + p.E_ext)) # dE/dt
+	dxdt[2] = 1/p.I_pop.τ * (-I + act_fn(I_act)(p.wIE*E - p.wII*I + p.I_ext)) # dI/dt
+    return dxdt
+end
+
 
 function simulate(p::WCModel, x0, T)
+    # tspan = (0.0, T)
+    # prob = ODEProblem(f!, x0, tspan, p)
+    # sol = solve(prob)
+    # return sol
+
+    dt = 1e-3
+    t = 0:dt:T
+    sol = integrate.odeint(f, x0, t)
+    return sol'
+end
+
+
+function f_time_dependent_input!(dxdt, x, params, t)
+    p, inputs = params
+    E_act = p.E_pop.act
+    I_act = p.I_pop.act
+	E, I = x
+	dxdt[1] = 1/p.E_pop.τ * (-E + act_fn(E_act)(p.wEE*E - p.wEI*I + inputs[1](t))) # dE/dt
+	dxdt[2] = 1/p.I_pop.τ * (-I + act_fn(I_act)(p.wIE*E - p.wII*I + inputs[2](t))) # dI/dt
+end
+
+function simulate_time_dependent_input(p::WCModel, inputs, x0, T)
     tspan = (0.0, T)
-    prob = ODEProblem(f!, x0, tspan, p)
+    prob = ODEProblem(f_time_dependent_input!, x0, tspan, (p, inputs))
     sol = solve(prob)
     return sol
 end
-
 
 # TODO WC integral equation -> require an absolute refractory period that is larger than dt ?!
 # TODO still it doesn't oscillate...
