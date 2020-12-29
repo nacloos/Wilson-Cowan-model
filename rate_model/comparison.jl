@@ -15,17 +15,17 @@ dt = 1e-4; n_iter = Int(T/dt)
 u_rest = 0; θ = 6e-2; τ = 4e-3; R = 7e-2
 Δ_abs = 0
 τ = 1e-4
-# f(u) = 1e-3 .*exp.(1/0.004*(u.-θ))
+f(u) = 1e-3 .*exp.(1/0.004*(u.-θ))
 
 # β = 100
-# τ₀ = 1e-3
+τ₀ = 1e-3
 # f(u) = 1/τ₀ .*exp.(β*(u.-θ))
-a = 100
-f(u) = act_fn(Sigmoid(a, θ))(R*u) # TODO; change firing prob in LIF_network
+# a = 100
+# f(u) = act_fn(Sigmoid(a, θ))(R*u) # TODO; change firing prob in LIF_network
 # x = 0:0.001:1
 # plot(x, f(x))
 
-Δ_abs = 1e-3
+# Δ_abs = 1e-3
 
 
 neuron = LIFNeuron(u_rest, θ, τ, R, Δ_abs, f)

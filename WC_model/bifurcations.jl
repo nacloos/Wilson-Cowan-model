@@ -213,44 +213,40 @@ end
 
 tau_E=1.; a_E=1.5; theta_E=3.0
 tau_I=1.; a_I=1.5; theta_I=3.0
-# wEE=10; wEI=12; wIE=15; wII=8
 wEE=13; wEI=14; wIE=15; wII=8
-# wEE=10; wEI=10; wIE=10; wII=4
 
-# tau_E=2.; a_E=1.0; theta_E=3.0
-# tau_I=2.; a_I=1.0; theta_I=3.0
-# wEE=16; wEI=12; wIE=15; wII=8
-
-E_ext=7.7; I_ext=7.7
+E_ext=3; I_ext=12
 E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))
 p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 
-# eq = find_equilibria(p)
-# println(eq)
 min_val = act_fn(p.I_pop.act)(-1e8)
 max_val = act_fn(p.I_pop.act)(1e8)
 I_bounds = (min_val, max_val)
 
-figure(figsize=(9,7), dpi=130)
-plot_bifurcation_curves(p, I_bounds)
-plot_bifurcation_diagram(p, I_bounds)
+# eq = find_equilibria(p, I_bounds)
+# println(eq)
 
-sn_handle, = plot([], [], linestyle="dotted", color="dimgray", label="Saddle-node           ")
-hopf_handle, = plot([], [], linestyle="-", color="dimgray", label="Andronov-Hopf")
-curves_legend = legend(handles=[sn_handle, hopf_handle], title="Bifurcations",
-                       bbox_to_anchor=(1.05, 1), loc="upper left")
-ax = gca().add_artist(curves_legend)
 
-stable_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="full", color="dimgray", label="Stable")
-saddle_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="left", color="dimgray", label="Saddle point           ")
-unstable_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="none", color="dimgray", label="Unstable")
-eq_legend = legend(handles=[stable_handle, saddle_handle, unstable_handle], title="Equilibria",
-       bbox_to_anchor=(1.05, 0.86), loc="upper left")
-ax = gca().add_artist(eq_legend)
-
-real_patch = matplotlib.patches.Patch(color="steelblue", label="Real")
-complex_patch = matplotlib.patches.Patch(color="darkorange", label="Complex conjugate")
-legend(handles=[real_patch, complex_patch], title="Eigenvalues",
-       bbox_to_anchor=(1.05, 0.68), loc="upper left")
-tight_layout()
+# figure(figsize=(9,7), dpi=130)
+# plot_bifurcation_curves(p, I_bounds)
+# plot_bifurcation_diagram(p, I_bounds)
+#
+# sn_handle, = plot([], [], linestyle="dotted", color="dimgray", label="Saddle-node           ")
+# hopf_handle, = plot([], [], linestyle="-", color="dimgray", label="Andronov-Hopf")
+# curves_legend = legend(handles=[sn_handle, hopf_handle], title="Bifurcations",
+#                        bbox_to_anchor=(1.05, 1), loc="upper left")
+# ax = gca().add_artist(curves_legend)
+#
+# stable_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="full", color="dimgray", label="Stable")
+# saddle_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="left", color="dimgray", label="Saddle point           ")
+# unstable_handle, = plot([], [], linestyle="None", marker="o", markeredgewidth=0.7, fillstyle="none", color="dimgray", label="Unstable")
+# eq_legend = legend(handles=[stable_handle, saddle_handle, unstable_handle], title="Equilibria",
+#        bbox_to_anchor=(1.05, 0.86), loc="upper left")
+# ax = gca().add_artist(eq_legend)
+#
+# real_patch = matplotlib.patches.Patch(color="steelblue", label="Real")
+# complex_patch = matplotlib.patches.Patch(color="darkorange", label="Complex conjugate")
+# legend(handles=[real_patch, complex_patch], title="Eigenvalues",
+#        bbox_to_anchor=(1.05, 0.68), loc="upper left")
+# tight_layout()

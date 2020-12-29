@@ -79,8 +79,8 @@ function simulate(neuron::LIFNeuron, u, I, last_spike, dt, iter)
     # println(next_u)
 
     # probability of emitting one spike in the interval dt, given the membrane potential
-    # firing_prob = 1 - exp(-dt*neuron.f(next_u))
-    firing_prob = f(next_u)
+    firing_prob = 1 - exp(-dt*neuron.f(next_u))
+    # firing_prob = f(next_u)
 
     if rand() <= firing_prob
         return neuron.u_rest, true
