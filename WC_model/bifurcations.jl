@@ -16,7 +16,7 @@ function find_equilibria(p::WCModel, bounds)
     # interpolate to have I as a function of E for the I-nullcline
     I_itp = LinearInterpolation((I_nullcline(values),), values, extrapolation_bc=Flat())
     Δ_nullclines(E) = E_nullcline(E) - I_itp(E)
-    equilibria = find_zeros(Δ_nullclines, min_val, max_val)
+    equilibria = find_zeros(Δ_nullclines, bounds[1], bounds[2])
     # plot(I_nullcline(values), values, label="\$\\frac{dI}{dt}=0\$")
     # plot(values, E_nullcline(values), label="\$\\frac{dE}{dt}=0\$")
     # plot(values, Δ_nullclines(values))

@@ -208,7 +208,7 @@ function plot_homoclinic(p::WCModel)
         ylim(0.84, max_val)
         xlim(0.092, 0.333)
     end
-    subplots_adjust(left=0.01, right=0.98, wspace=0)
+    subplots_adjust(left=0.012, right=0.98, wspace=0)
     savefig(savefig_path*"homoclinic.pdf")
     savefig(savefig_path*"homoclinic.png", transparent=true)
 end
@@ -217,7 +217,8 @@ end
 tau_E=1.; a_E=1.5; theta_E=3.0
 tau_I=1.; a_I=1.5; theta_I=3.0
 wEE=13; wEI=14; wIE=15; wII=8
-E_ext=12.2; I_ext=9
+# E_ext=12.2; I_ext=9
+E_ext=0; I_ext=0
 
 E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))
@@ -226,4 +227,14 @@ global p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 
 # plot_limit_cycle(p)
 # plot_hysteresis(p)
-plot_homoclinic(p)
+# plot_homoclinic(p)
+
+
+figure(dpi=130)
+plot_nullclines(p, show_eq=false)
+xlabel("\$E\$")
+ylabel("\$I\$")
+title("\$E_{ext} = I_{ext} = 0\$")
+legend()
+savefig(savefig_path*"nullclines.pdf")
+savefig(savefig_path*"nullclines.png", transparent=true)

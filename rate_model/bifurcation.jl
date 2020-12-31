@@ -10,10 +10,26 @@ function find_equilibria(p::RateModel, bounds=(0,1))
     return eq
 end
 
-function plot_f(p::RateModel)
-    x = 0:0.001:1.5
-    plot(x, p.f(p.w*x .+ p.ext))
-    plot(x, x)
+function plot_act_fn(p::RateModel)
+    ext_values = [1, 2.3033033033033035, 4.5, 6.701701701701702, 7.7]
+    titles = ["\$I < I_{c_1}\$", "\$I = I_{c_1}\$", "\$I_{c_1} < I < I_{c_2}\$", "\$I = I_{c_2}\$", "\$I < I_{c_2}\$"]
+    figure(figsize=(12,3), dpi=130)
+    for (i,ext) in enumerate(ext_values)
+        subplot(1, length(ext_values), i)
+        x = 0:0.001:1.5
+        plot(x, x, color="dimgray", linestyle="--", label="\$y = x\$")
+        plot(x, p.f(p.w*x .+ ext), color="tab:red", label="\$y = F(wx+I)\$")
+
+        title(titles[i])
+        axis("off")
+        axis("equal")
+        if i == length(ext_values)
+            legend(loc="lower right")
+        end
+    end
+    subplots_adjust(left=0.012, right=0.98, wspace=0)
+    savefig(savefig_path*"rate_bif.pdf")
+    savefig(savefig_path*"rate_bif.png", transparent=true)
 end
 
 
@@ -59,9 +75,11 @@ function plot_hysteresis(p::RateModel)
         # scatter(repeat([ext], length(eq)), eq, color="tab:blue")
     end
     # println(first_bif_idx, " ", second_bif_idx)
-    plot(ext_values[1:second_bif_idx], stable_eq1[1:second_bif_idx], color="tab:blue", label="Stable equilibrium")
-    plot(ext_values[first_bif_idx:second_bif_idx], unstable_eq[first_bif_idx:second_bif_idx], color="tab:blue", linestyle="--", label="Unstable equilibrium")
-    plot(ext_values[first_bif_idx:end], stable_eq2[first_bif_idx:end], color="tab:blue")
+
+    figure(figsize=(6,5), dpi=130)
+    plot(ext_values[1:second_bif_idx], stable_eq1[1:second_bif_idx], color="tab:red", label="Stable equilibrium")
+    plot(ext_values[first_bif_idx:second_bif_idx], unstable_eq[first_bif_idx:second_bif_idx], color="tab:red", linestyle="--", label="Unstable equilibrium")
+    plot(ext_values[first_bif_idx:end], stable_eq2[first_bif_idx:end], color="tab:red")
 
     ylabel("Equilibria \$A^*\$")
     xlabel("External input \$I\$")
@@ -69,7 +87,10 @@ function plot_hysteresis(p::RateModel)
     critical_ext = (ext_values[first_bif_idx], ext_values[second_bif_idx])
     vlines(critical_ext[1], 0, 1, color="dimgray", linestyle="dotted", label="Saddle-node bifurcation")
     vlines(critical_ext[2], 0, 1, color="dimgray", linestyle="dotted")
+    display(critical_ext)
     legend()
+    savefig(savefig_path*"rate_hysteresis.pdf")
+    savefig(savefig_path*"rate_hysteresis.png", transparent=true)
 end
 
 
@@ -85,6 +106,7 @@ function simulate_hystereris(p::RateModel, dt, T)
     t = dt:dt:T
     # plot(t, sol)
     plot(I_ext, sol)
+
 end
 
 
@@ -106,15 +128,9 @@ f(x) = act_fn(Sigmoid(a, θ))(x)
 
 
 model = RateModel(τ, w, ext, f)
-# eq = find_equilibria(model)
-# println()
-# println(eq)
 
-# figure()
-# plot_f(model)
-# scatter(eq, model.f(model.w*eq .+ model.ext), marker="x")
+# plot_act_fn(model)
 
-figure(dpi=130)
 plot_hysteresis(model)
 
 # simulate_hystereris(model, 1e-4, 0.2)
