@@ -3,12 +3,18 @@ using PyCall
 
 include("../activation_fns.jl")
 
+# produces better trajectories in the phase plane than DifferentialEquations, don't know why
 integrate = pyimport("scipy.integrate")
 
-# TODO time dependent input, don't put external input the WCModel
+
+struct Pop
+    τ   # time constant of the population
+    act # activation function of the population
+end
+
 struct WCModel
-    E_pop::Pop
-    I_pop::Pop
+    E_pop::Pop # excitatory population
+    I_pop::Pop # inhibitory population
     wEE
     wIE
     wEI
@@ -17,14 +23,6 @@ struct WCModel
     I_ext
 end
 
-struct WCIntegral
-    R
-    I
-    τ
-    θ
-    Δ_abs
-    f
-end
 
 function nullclines(p::WCModel)
     E_act = p.E_pop.act
@@ -34,15 +32,9 @@ function nullclines(p::WCModel)
     return E_nullcline, I_nullcline
 end
 
-
-function f!(dxdt, x, p::WCModel, t)
-    E_act = p.E_pop.act
-    I_act = p.I_pop.act
-	E, I = x
-	dxdt[1] = 1/p.E_pop.τ * (-E + act_fn(E_act)(p.wEE*E - p.wEI*I + p.E_ext)) # dE/dt
-	dxdt[2] = 1/p.I_pop.τ * (-I + act_fn(I_act)(p.wIE*E - p.wII*I + p.I_ext)) # dI/dt
-end
-
+"""
+Dynamical equations of the Wilson-Cowan model
+"""
 function f(x, t)
     E_act = p.E_pop.act
     I_act = p.I_pop.act
@@ -55,11 +47,6 @@ end
 
 
 function simulate(p::WCModel, x0, T)
-    # tspan = (0.0, T)
-    # prob = ODEProblem(f!, x0, tspan, p)
-    # sol = solve(prob)
-    # return sol
-
     dt = 1e-3
     t = 0:dt:T
     sol = integrate.odeint(f, x0, t)
@@ -81,36 +68,4 @@ function simulate_time_dependent_input(p::WCModel, inputs, x0, T)
     prob = ODEProblem(f_time_dependent_input!, x0, tspan, (p, inputs))
     sol = solve(prob)
     return sol
-end
-
-# TODO WC integral equation -> require an absolute refractory period that is larger than dt ?!
-# TODO still it doesn't oscillate...
-function simulate(p::WCIntegral, dt, T)
-    # u(t) = p.R*p.I .*(1 .- exp.(-t ./ p.τ))
-    # ρ(t) = p.f(u(t))
-
-    n_iter = Int(T/dt)
-    γ = Int(p.Δ_abs/dt) # number of iterations during the absolute refractory period
-
-    # h = zeros(n_iter)
-    h(t) = 1-exp(-(t-0.1)/p.τ)
-
-    # initially all neurons have just fired at time -dt, they start their refractory period at t=0
-    A = zeros(n_iter)
-
-    for iter in 2:n_iter
-        # h[iter] = h[iter-1] + 1/p.τ*(-h[iter-1] + p.R*p.I)*dt
-
-        if iter > γ
-            # A[iter] = f(p.R*p.I) / (1 + Δ_abs*f(p.R*p.I)) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
-            # A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter])) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
-            A[iter] = f(h(iter*dt)) / (1 + Δ_abs*f(h(iter*dt))) * (1 - sum(A[iter-γ+1:iter-1])*p.Δ_abs)
-            # A[iter] = f(h(iter*dt)) / (1 + Δ_abs*f(h(iter*dt)))
-        else
-            # initialization, assume zero input current before t=0
-            # A[iter] = f(h[iter]) / (1 + Δ_abs*f(h[iter]))
-            A[iter] = 0
-        end
-    end
-    return A # population activity starting at time t=0
 end

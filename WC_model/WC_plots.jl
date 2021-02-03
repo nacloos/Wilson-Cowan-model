@@ -1,13 +1,12 @@
 using Interpolations
 using PyPlot
 pygui(true)
-using PyCall
-slice(i,j) = pycall(pybuiltin("slice"), PyObject, i,j)
 
 include("WC_model.jl")
 include("bifurcations.jl")
 
-savefig_path = "D:\\UCL\\Master\\Nonlinear Dynamical Systems\\Project\\report\\figures\\"
+# directory where you want to save the figures
+savefig_path = "figures/"
 
 
 function plot_phase_space(p::WCModel, T; E_bounds=[0,1], I_bounds=[0,1])
@@ -18,8 +17,6 @@ function plot_phase_space(p::WCModel, T; E_bounds=[0,1], I_bounds=[0,1])
     I0 = [0.97]
     for i=1:length(E0), j=1:length(I0)
         sol = simulate(p, [E0[i], I0[j]], T)
-        # t = range(0, stop=T, length=500)
-        # plot(sol(t)[1,:], sol(t)[2,:], alpha=0.3, color="cornflowerblue") # TODO: intesecting trajectories!
         plot(sol[1,:], sol[2,:], alpha=0.2, color="cornflowerblue")
     end
     xlim(E_bounds...)
@@ -53,7 +50,6 @@ end
 function plot_limit_cycle(p::WCModel)
     T = 20
     E0 = 0.5; I0 = 0.71
-    # t = range(0, stop=T, length=1000)
     sol = simulate(p, [E0, I0], T)
 
     figure(figsize=(10,4), dpi=130)
@@ -69,12 +65,10 @@ function plot_limit_cycle(p::WCModel)
     subplot(1, 2, 2)
     t = range(0, stop=T, length=size(sol)[2])
     plot(t, sol[1,:], color="cornflowerblue")
-    # plot(t, sol[2,:], color="navy")
     xlabel("t")
     ylabel("E")
     savefig(savefig_path*"limit_cycle.png", transparent=true)
 end
-
 
 
 function plot_hysteresis(p::WCModel)
@@ -135,14 +129,13 @@ end
 
 
 function plot_homoclinic(p::WCModel)
-
     min_val = -1/(1+exp(p.I_pop.act.a*p.I_pop.act.θ))
     max_val = 1-1/(1+exp(p.I_pop.act.a*p.I_pop.act.θ))
     E_bounds = [0.1, 0.35]
     I_bounds = [0.85, max_val]
 
     I_ext = 9
-    # E_ext_values = [12.1, 12.2, 12.252, 12.42]
+    # values chosen manually for the visualization
     E_ext_values = [12.1, 12.190282435, 12.21, 12.28, 12.42]
 
     figure(figsize=(12,3), dpi=130)
@@ -177,9 +170,6 @@ function plot_homoclinic(p::WCModel)
             plot(sol[1,:], sol[2,:], color="coral", linewidth=1.5)
             scatter(init_point..., marker=".", color="coral")
 
-
-
-            # init_point = sn + 5e-3 .*(J_eigvecs[:,1] .- J_eigvecs[:,2])
             init_point = sn - 5e-4 .* J_eigvecs[:,2]
             sol = simulate(p, init_point, 10)
             plot(sol[1,:], sol[2,:],color="#4A4A48", linewidth=1.5)
@@ -217,19 +207,21 @@ end
 tau_E=1.; a_E=1.5; theta_E=3.0
 tau_I=1.; a_I=1.5; theta_I=3.0
 wEE=13; wEI=14; wIE=15; wII=8
-# E_ext=12.2; I_ext=9
-E_ext=0; I_ext=0
 
 E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))
-global p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 
 
-# plot_limit_cycle(p)
-# plot_hysteresis(p)
-# plot_homoclinic(p)
+E_ext=6; I_ext=1
+p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
+plot_limit_cycle(p)
+
+plot_hysteresis(p)
+plot_homoclinic(p)
 
 
+E_ext=0; I_ext=0
+p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 figure(dpi=130)
 plot_nullclines(p, show_eq=false)
 xlabel("\$E\$")

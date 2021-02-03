@@ -8,7 +8,7 @@ include("../activation_fns.jl")
 
 
 """
-Find the equilibria by computing the roots of the difference between the two nullclines.
+Find the equilibria by computing the roots of the difference between the two nullclines
 """
 function find_equilibria(p::WCModel, bounds)
     E_nullcline, I_nullcline = nullclines(p)
@@ -17,6 +17,7 @@ function find_equilibria(p::WCModel, bounds)
     I_itp = LinearInterpolation((I_nullcline(values),), values, extrapolation_bc=Flat())
     Δ_nullclines(E) = E_nullcline(E) - I_itp(E)
     equilibria = find_zeros(Δ_nullclines, bounds[1], bounds[2])
+    # some plots to debug if needed
     # plot(I_nullcline(values), values, label="\$\\frac{dI}{dt}=0\$")
     # plot(values, E_nullcline(values), label="\$\\frac{dE}{dt}=0\$")
     # plot(values, Δ_nullclines(values))
@@ -24,7 +25,7 @@ function find_equilibria(p::WCModel, bounds)
 end
 
 """
-Compute the Jacobian of the Wilson-Cowan model.
+Compute the Jacobian of the Wilson-Cowan model
 """
 function jacobian(p::WCModel, E::Real, I::Real, E_ext::Real, I_ext::Real)
     τE = p.E_pop.τ; τI = p.I_pop.τ
@@ -50,10 +51,10 @@ end
 
 """
 Compute the external inputs I_ext, E_ext so that the system is at equilibrium
-for the given E, I.
+for the given E, I
 """
 function ext_input(p::WCModel, E, I, bounds)
-    E = E[(I .>= bounds[1]) .& (I .<= bounds[2])] # restricted to values greater than 0 and smaller than 1
+    E = E[(I .>= bounds[1]) .& (I .<= bounds[2])] # restricted to values inside bounds
     I = I[(I .>= bounds[1]) .& (I .<= bounds[2])]
     E_ext = finv(p.E_pop.act)(E) .- p.wEE*E .+ p.wEI*I
     I_ext = finv(p.I_pop.act)(I) .- p.wIE*E .+ p.wII*I
@@ -61,13 +62,13 @@ function ext_input(p::WCModel, E, I, bounds)
 end
 
 """
-Compute the curve of equilibria where the determinant of the Jacobian vanishes,
-in the (E_ext, I_ext) plane.
+Compute the curve of saddle-node bifurcations, i.e. det(J) = 0
 """
 function saddle_node_curve(p::WCModel, bounds)
-    # E = range(min_val, stop=max_val, length=1000)
+    # samples points for the curve parameter E
     E = range(bounds[1], stop=bounds[2]-0.09*bounds[2], length=1000)
     E = [E; range(bounds[2]-0.09*bounds[2], stop=bounds[2], length=10000)]
+
     # apply a change of variable to simplify the computation of the determinant
     x = E .+ 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
@@ -82,7 +83,7 @@ function saddle_node_curve(p::WCModel, bounds)
     I2 = I2 .- 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
     E1, I1, E_ext1, I_ext1 = ext_input(p, E, I1, bounds)
-    # negative values, can be discarded
+    # negative values can be discarded
     # E2, I2, E_ext2, I_ext2 = ext_input(p, E, I2, bounds)
 
     # a few sanity checks
@@ -95,7 +96,9 @@ function saddle_node_curve(p::WCModel, bounds)
     return E1, I1, E_ext1, I_ext1
 end
 
-
+"""
+Compute the curve of Hopf bifurcations, i.e. tr(J) = 0 and det(J) >= 0
+"""
 function hopf_curve(p::WCModel, bounds)
     E = range(bounds[1], stop=bounds[2], length=1000)
     # apply a change of variable to simplify the computation of the trace
@@ -103,9 +106,8 @@ function hopf_curve(p::WCModel, bounds)
 
     # compute the roots of the trace of the jacobian
     ρ = p.wII^2 .- 4*p.wII.*(p.wEE.*(1 .- x).*x .- 2/p.E_pop.act.a)
-    # Δ = 1 - 1/p.wEE*(8 + p.wII)
-    # plot(E, ρ)
 
+    # keep only the points that have real roots
     E = E[ρ .>= 0]
     ρ = ρ[ρ .>= 0]
 
@@ -116,7 +118,7 @@ function hopf_curve(p::WCModel, bounds)
     I2 = I2 .- 1/(1+exp(p.E_pop.act.a*p.E_pop.act.θ))
 
     E1, I1, E_ext1, I_ext1 = ext_input(p, E, I1, bounds)
-    # negative values, can be discarded
+    # negative values can be discarded
     # E2, I2, E_ext2, I_ext2 = ext_input(p, E, I2, bounds)
 
     # remove points where the determinant is negative to keep only hopf bifurcations
@@ -128,7 +130,7 @@ function hopf_curve(p::WCModel, bounds)
     for i=1:length(hopf_E)
         J = jacobian(p, hopf_E[i], hopf_I[i], hopf_E_ext[i], hopf_I_ext[i])
         if det(J) < 0
-            println(det(J))
+            println("Negative determinant: ", det(J))
             println("E=$(hopf_E[i]); I=$(hopf_I[i]); E_ext=$(hopf_E_ext[i]); I_ext=$(hopf_I_ext[i])")
         end
         @test isapprox(-hopf_E[i] + act_fn(p.E_pop.act)(p.wEE*hopf_E[i] - p.wEI*hopf_I[i] + hopf_E_ext[i]), 0, atol=1e-10)

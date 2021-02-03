@@ -3,8 +3,13 @@ pygui(true)
 
 include("bifurcations.jl")
 
-savefig_path = "D:\\UCL\\Master\\Nonlinear Dynamical Systems\\Project\\report\\figures\\"
+# directory where you want to save the figures
+savefig_path = "figures/"
 
+
+"""
+Plot the saddle-node and Hopf bifurcation curves in the (E_ext, I_ext) plane
+"""
 function plot_bifurcation_curves(p::WCModel, bounds)
     max_I_ext = 14
 
@@ -20,14 +25,16 @@ function plot_bifurcation_curves(p::WCModel, bounds)
     plot(hopf_E_ext[hopf_I_ext.<= max_I_ext], hopf_I_ext[hopf_I_ext.<=max_I_ext], color="dimgray", label="Hopf bifurcation")
 end
 
-function plot_bifurcation_diagram(p::WCModel, bounds)
+"""
+Plot the number and types of equilibria for a grid of values in the (E_ext, I_ext) plane
+"""
+function plot_equilibria(p::WCModel, bounds)
     Δ = 0.7
-    # for I_ext=6:0.5:14, E_ext=13:0.1:16
-    # for I_ext=0:Δ:16, E_ext=0:Δ:16
     for I_ext=0:Δ:14, E_ext=2:Δ:16
         wc = WCModel(p.E_pop, p.I_pop, p.wEE, p.wIE, p.wEI, p.wII, E_ext, I_ext)
         equilibria = find_equilibria(wc, bounds)
 
+        # set the marker positions depending on the number of equilibria
         if length(equilibria) == 2
             l = 0.05
             marker_pos = [(-sqrt(2)*l, -sqrt(2)*l), (+sqrt(2)*l, +sqrt(2)*l)]
@@ -38,6 +45,7 @@ function plot_bifurcation_diagram(p::WCModel, bounds)
             marker_pos = [(0, 0)]
         end
 
+        # set the marker shape and color as a function of the type of the equilibrium
         for (i, eq) in enumerate(equilibria)
             J = jacobian(p, eq[1], eq[2], E_ext, I_ext)
             if det(J) > 0
@@ -61,18 +69,17 @@ function plot_bifurcation_diagram(p::WCModel, bounds)
                 color = "darkorange"
             end
 
-            # plot(E_ext+i*0.15, I_ext+i*0.15, markersize=4, marker="o", fillstyle=fill_style, color=color)
             plot(E_ext+marker_pos[i][1], I_ext+marker_pos[i][2], markersize=4, marker="o",
                  markeredgewidth=0.5, fillstyle=fill_style, color=color)
         end
     end
-    # make the legend
     xlabel("\$E_{ext}\$")
     ylabel("\$I_{ext}\$")
     axis("equal")
 end
 
 
+# parameters of the two populations
 tau_E=1.; a_E=1.5; theta_E=3.0
 tau_I=1.; a_I=1.5; theta_I=3.0
 wEE=13; wEI=14; wIE=15; wII=8
@@ -82,18 +89,17 @@ E_pop = Pop(tau_E, Sigmoid(a_E, theta_E))
 I_pop = Pop(tau_I, Sigmoid(a_I, theta_I))
 p = WCModel(E_pop, I_pop, wEE, wIE, wEI, wII, E_ext, I_ext)
 
+# compute the min and max values of the activation function
 min_val = act_fn(p.I_pop.act)(-1e8)
 max_val = act_fn(p.I_pop.act)(1e8)
 I_bounds = (min_val, max_val)
 
-# eq = find_equilibria(p, I_bounds)
-# println(eq)
-
-
+# make the stability and bifurcation diagram
 figure(figsize=(9,7), dpi=130)
 plot_bifurcation_curves(p, I_bounds)
-plot_bifurcation_diagram(p, I_bounds)
+plot_equilibria(p, I_bounds)
 
+# make the legend of the plot
 sn_handle, = plot([], [], linestyle="dotted", color="dimgray", label="Saddle-node           ")
 hopf_handle, = plot([], [], linestyle="-", color="dimgray", label="Andronov-Hopf")
 curves_legend = legend(handles=[sn_handle, hopf_handle], title="Bifurcations",
@@ -111,5 +117,7 @@ real_patch = matplotlib.patches.Patch(color="steelblue", label="Real")
 complex_patch = matplotlib.patches.Patch(color="darkorange", label="Complex conjugate")
 legend(handles=[real_patch, complex_patch], title="Eigenvalues",
        bbox_to_anchor=(1.05, 0.68), loc="upper left")
+
 tight_layout()
-# savefig(savefig_path*"bifurcation_diagram.png", transparent=true)
+savefig(savefig_path*"bifurcation_diagram.png", transparent=true)
+savefig(savefig_path*"bifurcation_diagram.pdf")

@@ -4,16 +4,24 @@ pygui(true)
 
 include("rate_model.jl")
 
+# directory where you want to save the figures
+savefig_path = "figures/"
+
+
 function find_equilibria(p::RateModel, bounds=(0,1))
     fun = x -> -x + p.f(p.w*x .+ p.ext)
     eq = find_zeros(fun, bounds[1], bounds[2])
     return eq
 end
 
-function plot_act_fn(p::RateModel)
+
+function plot_saddle_node_bif(p::RateModel)
+    # values manually chosen for the visualization of the bifurcations
     ext_values = [1, 2.3033033033033035, 4.5, 6.701701701701702, 7.7]
+
     titles = ["\$I < I_{c_1}\$", "\$I = I_{c_1}\$", "\$I_{c_1} < I < I_{c_2}\$", "\$I = I_{c_2}\$", "\$I < I_{c_2}\$"]
     figure(figsize=(12,3), dpi=130)
+
     for (i,ext) in enumerate(ext_values)
         subplot(1, length(ext_values), i)
         x = 0:0.001:1.5
@@ -45,7 +53,6 @@ function plot_hysteresis(p::RateModel)
     second_bif_idx = -1 # set to -1 if tje bifurcation has not yet occured
 
     for (i, ext) in enumerate(ext_values)
-        # model = RateModel(τ, w, ext, u->act_fn(Sigmoid(a, θ))(R*u))
         model = RateModel(p.τ, p.w, ext, p.f)
         eq = find_equilibria(model)
         # check if encounter a saddle-node bifurcation
@@ -71,10 +78,7 @@ function plot_hysteresis(p::RateModel)
             end
         end
 
-        # println(eq)
-        # scatter(repeat([ext], length(eq)), eq, color="tab:blue")
     end
-    # println(first_bif_idx, " ", second_bif_idx)
 
     figure(figsize=(6,5), dpi=130)
     plot(ext_values[1:second_bif_idx], stable_eq1[1:second_bif_idx], color="tab:red", label="Stable equilibrium")
@@ -87,7 +91,6 @@ function plot_hysteresis(p::RateModel)
     critical_ext = (ext_values[first_bif_idx], ext_values[second_bif_idx])
     vlines(critical_ext[1], 0, 1, color="dimgray", linestyle="dotted", label="Saddle-node bifurcation")
     vlines(critical_ext[2], 0, 1, color="dimgray", linestyle="dotted")
-    display(critical_ext)
     legend()
     savefig(savefig_path*"rate_hysteresis.pdf")
     savefig(savefig_path*"rate_hysteresis.png", transparent=true)
@@ -96,7 +99,7 @@ end
 
 function simulate_hystereris(p::RateModel, dt, T)
     n_iter = Int(T/dt)
-    max_ext = 0.8
+    max_ext = 13
     I_ext = max_ext*ones(n_iter)
     I_ext[1:n_iter÷2] = 2*max_ext/T .* collect(dt:dt:T/2)
     I_ext[(n_iter÷2)+1:end] = 2*max_ext.*(T.-collect(T/2+dt:dt:T))/T
@@ -104,33 +107,23 @@ function simulate_hystereris(p::RateModel, dt, T)
     p = RateModel(p.τ, p.w, I_ext, p.f)
     sol = simulate(p, 0.0, dt, T)
     t = dt:dt:T
-    # plot(t, sol)
-    plot(I_ext, sol)
-
+    plot(I_ext, sol, label="Simulation")
+    legend()
 end
 
 
-θ = 6e-2; τ = 4e-3; a=100
-θ = 10; a=1.
-# R = 7e-2
-# w = 1.1
+θ = 10
+a = 1.
+f(x) = act_fn(Sigmoid(a, θ))(x)
+
 w = 11
 ext = 0.8
 τ = 1e-4
-f(x) = act_fn(Sigmoid(a, θ))(x)
-
-
-# Δ_abs = 4e-3
-# β = 1000
-# τ₀ = 1e-3
-# f(u) = 1/τ₀ .*exp.(β*(u.-θ))
-# F(I) = f(R*I) ./ (1 .+ Δ_abs*f(R*I))
-
-
 model = RateModel(τ, w, ext, f)
 
-# plot_act_fn(model)
-
+plot_saddle_node_bif(model)
 plot_hysteresis(model)
 
-# simulate_hystereris(model, 1e-4, 0.2)
+# uncomment to surimpose the simulation of the rate model to the theoretical
+# curve computed in plot_hysteresis
+# simulate_hystereris(model, 1e-4, 1)
